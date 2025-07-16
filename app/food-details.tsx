@@ -124,7 +124,7 @@ export default function FoodDetailsScreen() {
                   styles.macroBar, 
                   { 
                     width: `${(food.fat * 9 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100}%`,
-                    backgroundColor: '#FFB347' 
+                    backgroundColor: '#4763ffff' 
                   }
                 ]} 
               />
@@ -141,10 +141,13 @@ export default function FoodDetailsScreen() {
               <Text style={styles.legendText}>Carbs ({Math.round((food.carbs * 4 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100)}%)</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#FFB347' }]} />
+              <View style={[styles.legendColor, { backgroundColor: '#4763ffff' }]} />
               <Text style={styles.legendText}>Fat ({Math.round((food.fat * 9 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100)}%)</Text>
             </View>
           </View>
+
+
+          
         </View>
         
         <Pressable 

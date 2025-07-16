@@ -1,31 +1,31 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Pressable, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
   Image,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons,Feather } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useNutritionStore } from '@/store/nutrition-store';
 import { MealType } from '@/types/food';
 import Colors from '@/constants/colors';
 
 export default function FoodQuantityScreen() {
   const router = useRouter();
-  const { foodId, mealType, date } = useLocalSearchParams<{ 
-    foodId: string; 
-    mealType: MealType; 
+  const { foodId, mealType, date } = useLocalSearchParams<{
+    foodId: string;
+    mealType: MealType;
     date: string;
   }>();
-  
+
   const { getFoodById, addEntry } = useNutritionStore();
   const [quantity, setQuantity] = useState(1);
-  
+
   const food = getFoodById(foodId);
-  
+
   if (!food) {
     return (
       <View style={styles.container}>
@@ -33,54 +33,43 @@ export default function FoodQuantityScreen() {
       </View>
     );
   }
-  
+
   const totalCalories = food.calories * quantity;
   const totalProtein = food.protein * quantity;
   const totalCarbs = food.carbs * quantity;
   const totalFat = food.fat * quantity;
-  
+
   const handleDecreaseQuantity = () => {
     if (quantity > 0.25) {
       setQuantity(prev => Math.round((prev - 0.25) * 100) / 100);
     }
   };
-  
+
   const handleIncreaseQuantity = () => {
     setQuantity(prev => Math.round((prev + 0.25) * 100) / 100);
   };
-  
-  const handleAddFood = () => {
-    addEntry({
-      foodId: food.id,
-      date,
-      mealType,
-      quantity,
-    });
-    
-    router.push('/');
-  };
-  
+
   return (
     <>
-      <Stack.Screen 
-        options={{ 
+      <Stack.Screen
+        options={{
           title: food.name,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={Colors.text} />
             </Pressable>
-          )
-        }} 
+          ),
+        }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {food.image && (
           <Image source={{ uri: food.image }} style={styles.foodImage} />
         )}
-        
+
         <View style={styles.card}>
           <Text style={styles.foodName}>{food.name}</Text>
           <Text style={styles.servingSize}>{food.servingSize}</Text>
-          
+
           <View style={styles.nutritionContainer}>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{food.calories}</Text>
@@ -100,34 +89,34 @@ export default function FoodQuantityScreen() {
             </View>
           </View>
         </View>
-        
+
         <View style={styles.quantityCard}>
           <Text style={styles.quantityTitle}>Number of Servings</Text>
-          
+
           <View style={styles.quantityControls}>
-            <Pressable 
+            <Pressable
               style={({ pressed }) => [
                 styles.quantityButton,
-                pressed && styles.buttonPressed
+                pressed && styles.buttonPressed,
               ]}
               onPress={handleDecreaseQuantity}
             >
-<Feather name="minus" size={20} color={Colors.text} />
+              <Feather name="minus" size={20} color={Colors.text} />
             </Pressable>
-            
+
             <Text style={styles.quantityValue}>{quantity}</Text>
-            
-            <Pressable 
+
+            <Pressable
               style={({ pressed }) => [
                 styles.quantityButton,
-                pressed && styles.buttonPressed
+                pressed && styles.buttonPressed,
               ]}
               onPress={handleIncreaseQuantity}
             >
-             <Ionicons name="add" size={20} color={Colors.text} />
+              <Ionicons name="add" size={20} color={Colors.text} />
             </Pressable>
           </View>
-          
+
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Total Nutrition</Text>
             <View style={styles.totalRow}>
@@ -140,16 +129,31 @@ export default function FoodQuantityScreen() {
             </View>
           </View>
         </View>
-        
-        <Pressable 
-          style={({ pressed }) => [
-            styles.addButton,
-            pressed && styles.buttonPressed
-          ]}
-          onPress={handleAddFood}
-        >
-          <Text style={styles.addButtonText}>Add to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}</Text>
-        </Pressable>
+
+        <View style={styles.mealButtonsContainer}>
+          {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map(type => (
+            <Pressable
+              key={type}
+              onPress={() => {
+                addEntry({
+                  foodId: food.id,
+                  date,
+                  mealType: type,
+                  quantity,
+                });
+                router.push('/foods');
+              }}
+              style={({ pressed }) => [
+                styles.mealButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.mealButtonText}>
+                Add to {type.charAt(0).toUpperCase() + type.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </>
   );
@@ -273,15 +277,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text,
   },
-  addButton: {
+  mealButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  mealButton: {
+    flex: 1,
+    minWidth: '48%',
     backgroundColor: Colors.primary,
+    padding: 12,
+    marginTop: 8,
     borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
   },
-  addButtonText: {
+  mealButtonText: {
     color: Colors.background,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

@@ -3,6 +3,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
 
 export const unstable_settings = {
   initialRouteName: "(tabs)",
@@ -33,7 +34,12 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <>
+      <StatusBar style="dark" /> {/* 👈 Add this line */}
+      <RootLayoutNav />
+    </>
+  );
 }
 
 function RootLayoutNav() {
@@ -42,11 +48,13 @@ function RootLayoutNav() {
       screenOptions={{
         headerBackTitle: "Back",
         headerStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#ffffffff', // optional: match the dark background
         },
         headerTitleStyle: {
           fontWeight: '600',
+          color: '#000000ff', // optional: match the dark theme
         },
+        headerTintColor: '#000000ff', // optional: for back button and icons
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
