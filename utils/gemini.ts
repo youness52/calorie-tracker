@@ -11,7 +11,7 @@ interface AIDietaryInfo {
 }
 
 export async function analyzeFoodImage(base64Image: string): Promise<AIDietaryInfo> {
-  const apiKey = 'AIzaSyCBBpvJymLiC0EzhdxeKWZkB8r5bu_QtPg';
+  const apiKey = 'AIzaSyDeMxUaZFvhTel7KiS5I7wqEUfnIYxRuLI';
   
   if (!apiKey) {
     throw new Error('Gemini API key is missing. Please add EXPO_PUBLIC_GEMINI_API_KEY to your .env file.');
