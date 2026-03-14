@@ -8,12 +8,14 @@ interface NutritionState {
   entries: FoodEntry[];
   customFoods: Food[];
   goals: NutritionGoals;
-  
+
   // Actions
   addEntry: (entry: Omit<FoodEntry, 'id' | 'timestamp'>) => void;
   removeEntry: (id: string) => void;
+  editEntry: (id: string, updatedEntry: Partial<FoodEntry>) => void;
   addCustomFood: (food: Omit<Food, 'id'>) => Food;
-  removeCustomFood: (id: string) => void; // New action
+  removeCustomFood: (id: string) => void;
+  editCustomFood: (id: string, updatedFood: Partial<Food>) => void;
   updateGoals: (goals: Partial<NutritionGoals>) => void;
   getEntriesByDate: (date: string) => FoodEntry[];
   getFoodById: (id: string) => Food | undefined;
@@ -55,6 +57,14 @@ export const useNutritionStore = create<NutritionState>()(
         }));
       },
 
+      editEntry: (id, updatedEntry) => {
+        set((state) => ({
+          entries: state.entries.map((entry) =>
+            entry.id === id ? { ...entry, ...updatedEntry } : entry
+          )
+        }))
+      },
+
       addCustomFood: (food) => {
         const newFood = {
           ...food,
@@ -69,6 +79,14 @@ export const useNutritionStore = create<NutritionState>()(
       removeCustomFood: (id) => {
         set((state) => ({
           customFoods: state.customFoods.filter(food => food.id !== id),
+        }));
+      },
+
+      editCustomFood: (id, updatedFood) => {
+        set((state) => ({
+          customFoods: state.customFoods.map(food =>
+            food.id === id ? { ...food, ...updatedFood } : food
+          )
         }));
       },
 

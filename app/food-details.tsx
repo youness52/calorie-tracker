@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Pressable, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
   Image,
   ScrollView,
   Alert,
@@ -32,9 +32,9 @@ export default function FoodDetailsScreen() {
   const handleAddFood = () => {
     router.push({
       pathname: '/food-quantity',
-      params: { 
-        foodId: food.id, 
-        mealType: 'breakfast', 
+      params: {
+        foodId: food.id,
+        mealType: 'breakfast',
         date: getCurrentDate()
       }
     });
@@ -50,28 +50,47 @@ export default function FoodDetailsScreen() {
     }
   };
 
+  const handleEditFood = () => {
+    router.push({
+      pathname: '/add-custom-food',
+      params: {
+        editFoodId: food.id,
+        name: food.name,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fat: food.fat,
+        servingSize: food.servingSize,
+        category: food.category,
+        imageUri: food.image || '',
+      }
+    });
+  };
+
+  const isCustomFood = customFoods.some(f => f.id === food.id);
+
   return (
     <>
-      <Stack.Screen 
-        options={{ 
+      <Stack.Screen
+        options={{
           title: food.name,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={Colors.text} />
             </Pressable>
           )
-        }} 
+        }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {food.image && (
           <Image source={{ uri: food.image }} style={styles.foodImage} />
         )}
-        
+
         <View style={styles.card}>
           <Text style={styles.foodName}>{food.name}</Text>
           <Text style={styles.category}>{food.category.charAt(0).toUpperCase() + food.category.slice(1)}</Text>
           <Text style={styles.servingSize}>Serving size: {food.servingSize}</Text>
-          
+
           <View style={styles.nutritionContainer}>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionValue}>{food.calories}</Text>
@@ -91,46 +110,46 @@ export default function FoodDetailsScreen() {
             </View>
           </View>
         </View>
-        
+
         <View style={styles.macroBreakdownCard}>
           <Text style={styles.breakdownTitle}>Macronutrient Breakdown</Text>
-          
+
           <View style={styles.macroBarContainer}>
             {food.protein > 0 && (
-              <View 
+              <View
                 style={[
-                  styles.macroBar, 
-                  { 
+                  styles.macroBar,
+                  {
                     width: `${(food.protein * 4 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100}%`,
-                    backgroundColor: Colors.primary 
+                    backgroundColor: Colors.primary
                   }
-                ]} 
+                ]}
               />
             )}
             {food.carbs > 0 && (
-              <View 
+              <View
                 style={[
-                  styles.macroBar, 
-                  { 
+                  styles.macroBar,
+                  {
                     width: `${(food.carbs * 4 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100}%`,
-                    backgroundColor: Colors.secondary 
+                    backgroundColor: Colors.secondary
                   }
-                ]} 
+                ]}
               />
             )}
             {food.fat > 0 && (
-              <View 
+              <View
                 style={[
-                  styles.macroBar, 
-                  { 
+                  styles.macroBar,
+                  {
                     width: `${(food.fat * 9 / (food.protein * 4 + food.carbs * 4 + food.fat * 9)) * 100}%`,
-                    backgroundColor: '#4763ffff' 
+                    backgroundColor: '#4763ffff'
                   }
-                ]} 
+                ]}
               />
             )}
           </View>
-          
+
           <View style={styles.macroLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendColor, { backgroundColor: Colors.primary }]} />
@@ -147,10 +166,10 @@ export default function FoodDetailsScreen() {
           </View>
 
 
-          
+
         </View>
-        
-        <Pressable 
+
+        <Pressable
           style={({ pressed }) => [
             styles.addButton,
             pressed && styles.buttonPressed
@@ -161,15 +180,31 @@ export default function FoodDetailsScreen() {
           <Text style={styles.addButtonText}>Add to Today</Text>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.removeButton,
-            pressed && styles.buttonPressed
-          ]}
-          onPress={handleRemoveFood}
-        >
-          <Text style={styles.removeButtonText}>Remove Food</Text>
-        </Pressable>
+        {isCustomFood && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.editButton,
+              pressed && styles.buttonPressed
+            ]}
+            onPress={handleEditFood}
+          >
+            <Ionicons name="pencil" size={20} color={Colors.background} />
+            <Text style={styles.editButtonText}>Edit Food Details</Text>
+          </Pressable>
+        )}
+
+        {isCustomFood && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.removeButton,
+              pressed && styles.buttonPressed
+            ]}
+            onPress={handleRemoveFood}
+          >
+            <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+            <Text style={styles.removeButtonText}>Remove Food</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </>
   );
@@ -292,14 +327,32 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   removeButton: {
-    backgroundColor:  '#FF4C4C',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  removeButtonText: {
+    color: Colors.danger,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  editButton: {
+    backgroundColor: Colors.secondary,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
-  removeButtonText: {
+  editButtonText: {
     color: Colors.background,
     fontSize: 16,
     fontWeight: '600',
@@ -308,7 +361,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
-   addButtonText: {
+  addButtonText: {
     color: Colors.background,
     fontSize: 16,
     fontWeight: '600',

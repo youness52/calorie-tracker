@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  Pressable, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
   ScrollView,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useNutritionStore } from '@/store/nutrition-store';
 import { FoodCategory } from '@/types/food';
 import Colors from '@/constants/colors';
+import * as ImagePicker from 'expo-image-picker';
+import { saveImageLocally } from '@/utils/storage';
 
 const CATEGORIES: { label: string; value: FoodCategory }[] = [
   { label: 'Protein', value: 'protein' },
@@ -27,23 +30,36 @@ const CATEGORIES: { label: string; value: FoodCategory }[] = [
 
 export default function AddCustomFoodScreen() {
   const router = useRouter();
-  const { addCustomFood } = useNutritionStore();
-  
-  const [name, setName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fat, setFat] = useState('');
-  const [servingSize, setServingSize] = useState('');
-  const [category, setCategory] = useState<FoodCategory>('other');
-  const [imageUrl, setImageUrl] = useState('');
-  
-  const handleSave = () => {
+  const { addCustomFood, editCustomFood } = useNutritionStore();
+  const params = useLocalSearchParams();
+
+  const isEditing = !!params.editFoodId;
+
+  const [name, setName] = useState(params.name as string || '');
+  const [calories, setCalories] = useState(params.calories && params.calories !== '0' ? String(params.calories) : '');
+  const [protein, setProtein] = useState(params.protein && params.protein !== '0' ? String(params.protein) : '');
+  const [carbs, setCarbs] = useState(params.carbs && params.carbs !== '0' ? String(params.carbs) : '');
+  const [fat, setFat] = useState(params.fat && params.fat !== '0' ? String(params.fat) : '');
+  const [servingSize, setServingSize] = useState(params.servingSize as string || '');
+  const [category, setCategory] = useState<FoodCategory>((params.category as FoodCategory) || 'other');
+
+  // Safely decode the image URI passed by the router
+  const incomingImageUri = params.imageUri ? decodeURIComponent(params.imageUri as string) : '';
+  const [imageUrl, setImageUrl] = useState(incomingImageUri);
+
+  const handleSave = async () => {
     if (!name || !calories || !servingSize) {
       Alert.alert('Missing Information', 'Please fill in at least the name, calories, and serving size.');
       return;
     }
-    
+
+    let finalImageUrl = imageUrl || undefined;
+
+    // If the image is a local URI from device rather than a web URL, copy to persistent storage
+    if (finalImageUrl && finalImageUrl.startsWith('file://')) {
+      finalImageUrl = await saveImageLocally(finalImageUrl);
+    }
+
     const newFood = {
       name,
       calories: parseFloat(calories) || 0,
@@ -52,28 +68,67 @@ export default function AddCustomFoodScreen() {
       fat: parseFloat(fat) || 0,
       servingSize,
       category,
-      image: imageUrl || undefined,
+      image: finalImageUrl,
     };
-    
-    addCustomFood(newFood);
-    Alert.alert('Success', 'Food added to your custom foods.');
-    router.back();
+
+    if (isEditing) {
+      editCustomFood(params.editFoodId as string, newFood);
+      Alert.alert('Success', 'Food successfully updated.');
+
+      // Navigate back to the Foods list, not just the details screen which might be stale
+      router.dismissAll();
+      router.push('/(tabs)/foods');
+    } else {
+      addCustomFood(newFood);
+      Alert.alert('Success', 'Food added to your custom foods.');
+      router.back();
+    }
   };
-  
+
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant photo library permissions to use this feature.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setImageUrl(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while opening the gallery.');
+    }
+  };
+
   return (
     <>
-      <Stack.Screen 
-        options={{ 
-          title: 'Add Custom Food',
+      <Stack.Screen
+        options={{
+          title: isEditing ? 'Edit Custom Food' : 'Add Custom Food',
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={Colors.text} />
             </Pressable>
           )
-        }} 
+        }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.card}>
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.foodImage}
+              resizeMode="cover"
+            />
+          ) : null}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Food Name*</Text>
             <TextInput
@@ -84,7 +139,7 @@ export default function AddCustomFoodScreen() {
               placeholderTextColor={Colors.muted}
             />
           </View>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Calories (per serving)*</Text>
             <TextInput
@@ -96,7 +151,7 @@ export default function AddCustomFoodScreen() {
               placeholderTextColor={Colors.muted}
             />
           </View>
-          
+
           <View style={styles.inputRow}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <Text style={styles.label}>Protein (g)</Text>
@@ -109,7 +164,7 @@ export default function AddCustomFoodScreen() {
                 placeholderTextColor={Colors.muted}
               />
             </View>
-            
+
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
               <Text style={styles.label}>Carbs (g)</Text>
               <TextInput
@@ -122,7 +177,7 @@ export default function AddCustomFoodScreen() {
               />
             </View>
           </View>
-          
+
           <View style={styles.inputRow}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <Text style={styles.label}>Fat (g)</Text>
@@ -135,7 +190,7 @@ export default function AddCustomFoodScreen() {
                 placeholderTextColor={Colors.muted}
               />
             </View>
-            
+
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 12 }]}>
               <Text style={styles.label}>Serving Size*</Text>
               <TextInput
@@ -147,11 +202,11 @@ export default function AddCustomFoodScreen() {
               />
             </View>
           </View>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category</Text>
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoriesContainer}
             >
@@ -164,7 +219,7 @@ export default function AddCustomFoodScreen() {
                   ]}
                   onPress={() => setCategory(cat.value)}
                 >
-                  <Text 
+                  <Text
                     style={[
                       styles.categoryText,
                       category === cat.value && styles.selectedCategoryText
@@ -176,26 +231,26 @@ export default function AddCustomFoodScreen() {
               ))}
             </ScrollView>
           </View>
-          
+
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Image URL (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={imageUrl}
-              onChangeText={setImageUrl}
-              placeholder="https://example.com/image.jpg"
-              placeholderTextColor={Colors.muted}
-            />
+            <Text style={styles.label}>Image</Text>
+
+            <View style={styles.imagePickerRow}>
+              <Pressable style={styles.imagePickerButton} onPress={handlePickImage}>
+                <Ionicons name="images" size={20} color={Colors.primary} />
+                <Text style={styles.imagePickerText}>Select Photo</Text>
+              </Pressable>
+            </View>
           </View>
-          
-          <Pressable 
+
+          <Pressable
             style={({ pressed }) => [
               styles.saveButton,
               pressed && styles.buttonPressed
             ]}
             onPress={handleSave}
           >
-            <Text style={styles.saveButtonText}>Save Food</Text>
+            <Text style={styles.saveButtonText}>{isEditing ? 'Save Changes' : 'Save Food'}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -225,6 +280,13 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  foodImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 20,
+    backgroundColor: Colors.lightGray,
+  },
   inputGroup: {
     marginBottom: 16,
   },
@@ -244,6 +306,27 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: Colors.text,
+  },
+  imagePickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.lightGray,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  imagePickerText: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
   },
   categoriesContainer: {
     gap: 8,

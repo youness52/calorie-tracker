@@ -33,6 +33,13 @@
         {
           "origin": "https://zbair.net/"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs to access your photos to let you select food images.",
+          "cameraPermission": "The app needs to access your camera to let you take photos of your meals for AI calorie estimation."
+        }
       ]
     ],
     "experiments": {
