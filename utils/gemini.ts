@@ -16,47 +16,32 @@ export async function analyzeFoodImage(base64Image: string): Promise<AIDietaryIn
       "https://api-indol-theta-99.vercel.app/analyze",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image: base64Image,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Image }),
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText);
-    }
-
     const data = await response.json();
 
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!resultText) {
-      throw new Error("No valid response from AI");
+    if (!response.ok) {
+      // Handles 429 (Rate Limit) or 400 (No Food) from your backend
+      throw new Error(data.error || "Analysis failed");
     }
 
-    // Since we forced JSON mode → no need to clean markdown
-    const parsedData = JSON.parse(resultText);
-
-    if (parsedData.error) {
-      throw new Error(parsedData.error);
-    }
-
+    // IMPORTANT: 'data' is already the flat JSON object from your server.
+    // We don't need to look for data.candidates here.
     return {
-      name: parsedData.name || 'Unknown Food',
-      calories: parsedData.calories || 0,
-      protein: parsedData.protein || 0,
-      carbs: parsedData.carbs || 0,
-      fat: parsedData.fat || 0,
-      servingSize: parsedData.servingSize || '1 serving',
-      category: parsedData.category || 'other',
+      name: data.name || 'Unknown Food',
+      calories: Number(data.calories) || 0,
+      protein: Number(data.protein) || 0,
+      carbs: Number(data.carbs) || 0,
+      fat: Number(data.fat) || 0,
+      servingSize: data.servingSize || '1 serving',
+      category: (data.category as FoodCategory) || 'other',
     };
 
-  } catch (error) {
-    console.error("Error analyzing image:", error);
+  } catch (error: any) {
+    console.error("Gemini Utility Error:", error);
     throw error;
   }
 }
