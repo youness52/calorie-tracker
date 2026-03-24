@@ -13,7 +13,7 @@ interface AIDietaryInfo {
 export async function analyzeFoodImage(base64Image: string): Promise<AIDietaryInfo> {
   try {
     const response = await fetch(
-      "https://your-project.vercel.app/api/analyze",
+      "https://api-indol-theta-99.vercel.app/analyze",
       {
         method: "POST",
         headers: {
