@@ -11,8 +11,10 @@ interface AIDietaryInfo {
 }
 
 export async function analyzeFoodImage(base64Image: string): Promise<AIDietaryInfo> {
-  const apiKey = '0AIzaSyDeMxUaZFvhTel7KiS5I7wqEUfnIYxRuLI';
-  
+ // const apiKey = '0AIzaSyDeMxUaZFvhTel7KiS5I7wqEUfnIYxRuLI';
+  const res = await fetch("https://api-indol-theta-99.vercel.app/api/key");
+  const data = await res.json();
+  const apiKey = data.apiKey;
   if (!apiKey) {
     throw new Error('Gemini API key is missing. Please add EXPO_PUBLIC_GEMINI_API_KEY to your .env file.');
   }
